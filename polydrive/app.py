@@ -9,5 +9,6 @@ CORS(app, supports_credentials=True)
 
 app.debug = env.debug
 app.config["SECRET_KEY"] = env.secret_key
+app.env = env.environment
 
 manager = Manager(app)

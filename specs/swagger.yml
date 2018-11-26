@@ -1,0 +1,65 @@
+openapi: 3.0.1
+info:
+  title: PolyDrive API
+  description: API for the awesome PolyDrive project!
+  version: 0.0.1
+servers:
+  - url: 'http://api.example.com/v1'
+    description: test server
+paths:
+  /login:
+    post:
+      tags:
+        - users
+      summary: Log a user in.
+      description: Authenticate the user when valid credentials are submitted.
+      responses:
+        '200':
+          description: Object describing the logged user.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+components:
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        status:
+          type: string
+        messages:
+          type: array
+          items:
+            type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+  responses:
+    NotFound:
+      description: The specified resource was not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponse'
+    Unauthorized:
+      description: Unauthorized.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiResponse'
