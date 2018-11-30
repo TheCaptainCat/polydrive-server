@@ -21,30 +21,25 @@ class ApiMessage:
         return jsonify(json), self.code
 
 
-class MessageBuilder:
-    @staticmethod
-    def build_message(code, status, messages=None, content=None):
-        return ApiMessage(code=code, status=status, messages=messages, content=content)
-
-    @staticmethod
-    def ok(messages=None, content=None):
-        return MessageBuilder.build_message(200, 'OK', messages, content)
-
-    @staticmethod
-    def created(messages=None, content=None):
-        return MessageBuilder.build_message(201, 'CREATED', messages, content)
-
-    @staticmethod
-    def bad_request(messages=None, content=None):
-        return MessageBuilder.build_message(400, 'BAD REQUEST', messages, content)
-
-    @staticmethod
-    def unauthorized(messages=None, content=None):
-        return MessageBuilder.build_message(401, 'UNAUTHORIZED', messages, content)
-
-    @staticmethod
-    def not_found(messages=None, content=None):
-        return MessageBuilder.build_message(404, 'NOT FOUND', messages, content)
+def build_message(code, status, messages=None, content=None):
+    return ApiMessage(code=code, status=status, messages=messages, content=content).http_format()
 
 
-message_builder = MessageBuilder()
+def ok(messages=None, content=None):
+    return build_message(200, 'OK', messages, content)
+
+
+def created(messages=None, content=None):
+    return build_message(201, 'CREATED', messages, content)
+
+
+def bad_request(messages=None, content=None):
+    return build_message(400, 'BAD REQUEST', messages, content)
+
+
+def unauthorized(messages=None, content=None):
+    return build_message(401, 'UNAUTHORIZED', messages, content)
+
+
+def not_found(messages=None, content=None):
+    return build_message(404, 'NOT FOUND', messages, content)

@@ -2,42 +2,62 @@ from flask import request
 from flask_login import login_required, login_user, logout_user
 
 from polydrive import app
-from polydrive.services import bcrypt, message_builder
+from polydrive.services import bcrypt
+from polydrive.services.messages import ok, created, bad_request, unauthorized
 from polydrive.models import User
 
 
 @app.route('/login', methods=['POST'])
 def user_login():
     """
-    This route is called to log the user in.
+    Log the user in.
+
+    :return: the user info if login is successful
     """
     content = request.get_json()
     username = content['username']
     if username is None:
-        return message_builder.bad_request('Username must be submitted.').http_format()
+        return bad_request('Username must be submitted.')
     user = User.query.filter_by(username=username).first()
     if user is None:
-        return message_builder.unauthorized('Wrong credentials.').http_format()
+        return unauthorized('Wrong credentials.')
     password = content['password']
     if not bcrypt.check_password_hash(user.password, password):
-        return message_builder.unauthorized('Wrong credentials.').http_format()
+        return unauthorized('Wrong credentials.')
     login_user(user)
-    return message_builder.ok('Login successful.', user.serialized).http_format()
+    return ok('Login successful.', user.serialized)
 
 
 @app.route('/logout', methods=['GET'])
 @login_required
 def user_logout():
     """
-    This route is called to log the user out.
+    Log the user out.
     """
     logout_user()
-    return message_builder.ok('Logout successful.').http_format()
+    return ok('Logout successful.')
 
 
 @app.route('/register', methods=['POST'])
 def user_register():
+    """
+    Create a new user with the provided information.
+    """
     content = request.get_json()
     username = content['username']
     password = content['password']
     email = content['email']
+    messages = []
+    user = User.query.filter_by(username=username).first()
+    if user is not None:
+        messages.append('Username already in use.')
+    if email not in ['', None]:
+        user = User.query.filter_by(email=email).first()
+        if user is not None:
+            messages.append('Email address already in use.')
+    if len(password) < 6:
+        messages.append('Password too short.')
+    if len(messages) > 0:
+        return bad_request(messages)
+    user = User.create(username, password, email)
+    return created('User created', user.serialized)
