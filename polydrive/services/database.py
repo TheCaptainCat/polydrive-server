@@ -9,7 +9,10 @@ def init_db():
     db.create_all()
 
 
-app.config['SQLALCHEMY_DATABASE_URI'] = f'{env.sql_dbms}://{env.sql_user}:{env.sql_password}' \
-                                        f'@{env.sql_server}/{env.sql_database}'
+def clear_db():
+    db.drop_all()
+
+
+app.config['SQLALCHEMY_DATABASE_URI'] = env.sql_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 db = SQLAlchemy(app)

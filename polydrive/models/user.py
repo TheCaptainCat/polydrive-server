@@ -13,6 +13,7 @@ class User(db.Model):
     username = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=True)
+    files = db.relationship('File', lazy=True, backref=db.backref('user', lazy='subquery'))
 
     @property
     def is_authenticated(self):
@@ -60,11 +61,20 @@ class User(db.Model):
         return {
             'id': self.id,
             'username': self.username,
-            'email': self.email
+            'email': self.email,
+            'files': [f.id for f in self.files]
         }
 
     @staticmethod
     def create(username, password, email):
+        """
+        Create a user.
+
+        :param username: the username
+        :param password: the password
+        :param email: the email address
+        :return: a new user
+        """
         user = User(username=username, password=bcrypt.generate_password_hash(password), email=email)
         db.session.add(user)
         db.session.commit()

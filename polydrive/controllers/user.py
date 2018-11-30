@@ -1,5 +1,5 @@
 from flask import request
-from flask_login import login_required, login_user, logout_user
+from flask_login import login_required, login_user, logout_user, current_user
 
 from polydrive import app
 from polydrive.services import bcrypt
@@ -61,3 +61,9 @@ def user_register():
         return bad_request(messages)
     user = User.create(username, password, email)
     return created('User created', user.serialized)
+
+
+@app.route('/user', methods=['GET'])
+@login_required
+def user_get_details():
+    return ok('', current_user.serialized)
