@@ -88,3 +88,4 @@ crashlytics-build.properties
 fabric.properties
 .idea/httpRequests
 *.db
+/uploads

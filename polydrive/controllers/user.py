@@ -43,11 +43,17 @@ def user_register():
     """
     Create a new user with the provided information.
     """
-    content = request.get_json()
-    username = content['username']
-    password = content['password']
-    email = content['email']
     messages = []
+    content = request.get_json()
+    username = content.get('username', None)
+    if username is None:
+        messages.append('Missing parameter: username.')
+    password = content.get('password', None)
+    if password is None:
+        messages.append('Missing parameter: password.')
+    if len(messages) > 0:
+        return bad_request(messages)
+    email = content.get('email', None)
     user = User.query.filter_by(username=username).first()
     if user is not None:
         messages.append('Username already in use.')
