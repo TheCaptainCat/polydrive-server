@@ -39,11 +39,19 @@ class File(db.Model):
         }
 
     @staticmethod
-    def create(name, extension, mime, owner):
+    def create(name, extension, owner, buffer):
         random_string = None
         while random_string is None or File.query.filter_by(random_string=random_string).first() is not None:
             random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=100))
+        mime = buffer.content_type
         file = File(name=name, extension=extension, mime=mime, owner=owner, random_string=random_string)
         db.session.add(file)
         db.session.commit()
+        buffer.save(file.real_path)
         return file
+
+    @staticmethod
+    def delete(file):
+        db.session.delete(file)
+        db.session.commit()
+        os.remove(file.real_path)

@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from polydrive import app
 from polydrive.models import File
 from polydrive.services.messages import bad_request, ok, not_found, unauthorized
+from services.middleware import file_middleware
 
 
 @app.route('/files', methods=['POST'])
@@ -19,18 +20,29 @@ def file_upload():
     extension = None
     if len(f_details) > 1:
         extension = f_details[1]
-    mime = buffer.content_type
-    file = File.create(filename, extension, mime, current_user)
-    buffer.save(file.real_path)
+    file = File.create(filename, extension, current_user, buffer)
     return ok('File uploaded.', file.serialized)
 
 
 @app.route('/files/<int:file_id>', methods=['GET'])
 @login_required
+@file_middleware
 def file_download(file_id):
     file = File.query.get(file_id)
-    if file is None:
-        return not_found('This resource does not exist')
-    if file.user_id != current_user.id:
-        return unauthorized('You cannot access this resource.')
-    return send_file(file.real_path, mimetype=file.mime, attachment_filename=file.real_name)
+    return send_file(file.real_path, mimetype=file.mime)
+
+
+@app.route('/files/<int:file_id>', methods=['DELETE'])
+@login_required
+@file_middleware
+def file_delete(file_id):
+    file = File.query.get(file_id)
+    File.delete(file)
+    return ok('File successfully deleted.', file.serialized)
+
+
+@app.route('/files/<int:file_id>', methods=['PUT'])
+@login_required
+@file_middleware
+def file_update(file_id):
+    file = File.query.get(file_id)
