@@ -3,7 +3,8 @@ from flask_login import login_required, current_user
 
 from polydrive import app
 from polydrive.models import File
-from polydrive.services.messages import bad_request, ok, not_found, unauthorized
+from polydrive.services import db
+from polydrive.services.messages import bad_request, ok
 from services.middleware import file_middleware
 
 
@@ -21,15 +22,24 @@ def file_upload():
     if len(f_details) > 1:
         extension = f_details[1]
     file = File.create(filename, extension, current_user, buffer)
-    return ok('File uploaded.', file.serialized)
+    db.session.commit()
+    return ok('File uploaded.', file.deep)
 
 
 @app.route('/files/<int:file_id>', methods=['GET'])
 @login_required
 @file_middleware
+def file_details(file_id):
+    file = File.query.get(file_id)
+    return ok('OK', file.deep)
+
+
+@app.route('/files/<int:file_id>/file', methods=['GET'])
+@login_required
+@file_middleware
 def file_download(file_id):
     file = File.query.get(file_id)
-    return send_file(file.real_path, mimetype=file.mime)
+    return send_file(file.last_version.real_path, mimetype=file.mime)
 
 
 @app.route('/files/<int:file_id>', methods=['DELETE'])
@@ -38,11 +48,20 @@ def file_download(file_id):
 def file_delete(file_id):
     file = File.query.get(file_id)
     File.delete(file)
-    return ok('File successfully deleted.', file.serialized)
+    db.session.commit()
+    return ok('File successfully deleted.', file.deep)
 
 
 @app.route('/files/<int:file_id>', methods=['PUT'])
 @login_required
 @file_middleware
 def file_update(file_id):
+    if 'file' not in request.files:
+        return bad_request('File parameter required.')
     file = File.query.get(file_id)
+    buffer = request.files['file']
+    if buffer.filename == '':
+        return bad_request('No selected file.')
+    File.add_version(file, buffer)
+    db.session.commit()
+    return ok('File version uploaded.', file.deep)

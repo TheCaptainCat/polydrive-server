@@ -61,9 +61,14 @@ class User(db.Model):
         return {
             'id': self.id,
             'username': self.username,
-            'email': self.email,
-            'files': [f.serialized for f in self.files]
+            'email': self.email
         }
+
+    @property
+    def deep(self):
+        json = self.serialized
+        json['files'] = [f.serialized for f in self.files]
+        return json
 
     @staticmethod
     def create(username, password, email):

@@ -1,9 +1,5 @@
-import os
-import random
-import string
-
-from polydrive import app
 from polydrive.services import db
+from polydrive.models import Version
 
 
 class File(db.Model):
@@ -18,16 +14,16 @@ class File(db.Model):
     name = db.Column(db.Text, nullable=False)
     extension = db.Column(db.String(10), nullable=True)
     mime = db.Column(db.String(255), nullable=False)
-    random_string = db.Column(db.String(100), nullable=False, unique=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-
-    @property
-    def real_path(self):
-        return os.path.join(app.config['UPLOAD_FOLDER'], self.random_string)
+    versions = db.relationship('Version', lazy='subquery', backref=db.backref('file', lazy=True))
 
     @property
     def real_name(self):
         return f'{self.name}.{self.extension}'
+
+    @property
+    def last_version(self):
+        return max(self.versions, key=lambda version: version.created)
 
     @property
     def serialized(self):
@@ -38,20 +34,28 @@ class File(db.Model):
             'mime': self.mime
         }
 
+    @property
+    def deep(self):
+        json = self.serialized
+        json['version'] = [v.serialized for v in self.versions]
+        return json
+
     @staticmethod
     def create(name, extension, owner, buffer):
-        random_string = None
-        while random_string is None or File.query.filter_by(random_string=random_string).first() is not None:
-            random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=100))
         mime = buffer.content_type
-        file = File(name=name, extension=extension, mime=mime, owner=owner, random_string=random_string)
+        file = File(name=name, extension=extension, mime=mime, owner=owner)
+        file.versions.append(Version.create(file, buffer))
         db.session.add(file)
-        db.session.commit()
-        buffer.save(file.real_path)
         return file
 
     @staticmethod
+    def add_version(file, buffer):
+        version = Version.create(file, buffer)
+        file.versions.append(version)
+        return version
+
+    @staticmethod
     def delete(file):
+        for version in file.versions:
+            Version.delete(version)
         db.session.delete(file)
-        db.session.commit()
-        os.remove(file.real_path)
