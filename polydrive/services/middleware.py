@@ -16,7 +16,7 @@ def file_middleware(f):
         file = File.query.get(file_id)
         if file is None:
             return not_found('This resource does not exist.')
-        if check_file_rights(file, current_user):
+        if not check_file_rights(file, current_user):
             return unauthorized('You cannot access this resource.')
         return f(*args, **kwargs)
     return decorated_function
