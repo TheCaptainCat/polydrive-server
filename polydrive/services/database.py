@@ -1,8 +1,8 @@
-from flask_sqlalchemy import SQLAlchemy
+import yaml
 
-from polydrive import app
-
-import env
+from polydrive.services import db
+from polydrive.services.files import make_path
+from polydrive.models import User
 
 
 def init_db():
@@ -13,6 +13,13 @@ def clear_db():
     db.drop_all()
 
 
-app.config['SQLALCHEMY_DATABASE_URI'] = env.sql_uri
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-db = SQLAlchemy(app)
+def fill_db(path):
+    with open(make_path(path)) as f:
+        y = yaml.load(f)
+
+        users = y.get('users', None)
+        for user in users:
+            u = User(username=user['username'], password=user['password'])
+            db.session.add(u)
+        db.session.commit()
+

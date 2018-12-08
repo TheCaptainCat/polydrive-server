@@ -1,0 +1,7 @@
+users:
+  - username: pierre
+    password: password42
+  - username: hugo
+    password: password42
+  - username: gaetan
+    password: password42
