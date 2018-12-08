@@ -1,4 +1,4 @@
-from polydrive.services import db, bcrypt
+from polydrive.config import db, bcrypt
 
 
 class User(db.Model):

@@ -1,4 +1,4 @@
-from polydrive.services import db
+from polydrive.config import db
 from polydrive.models import Version
 
 

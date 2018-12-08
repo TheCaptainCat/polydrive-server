@@ -4,7 +4,7 @@ import string
 import datetime
 
 from polydrive import app
-from polydrive.services import db
+from polydrive.config import db
 
 
 class Version(db.Model):

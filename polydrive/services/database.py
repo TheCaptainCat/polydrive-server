@@ -1,7 +1,7 @@
 import yaml
 
-from polydrive.services import db
-from polydrive.services.files import make_path
+from polydrive.config import db
+from polydrive.config.files import make_path
 from polydrive.models import User
 
 

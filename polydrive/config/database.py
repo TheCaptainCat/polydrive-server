@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 
 from polydrive import app
-from polydrive.services.files import make_path
+from polydrive.config.files import make_path
 
 import env
 

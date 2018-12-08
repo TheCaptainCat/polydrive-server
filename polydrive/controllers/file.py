@@ -3,9 +3,9 @@ from flask_login import login_required, current_user
 
 from polydrive import app
 from polydrive.models import File, Version
-from polydrive.services import db
+from polydrive.config import db
 from polydrive.services.messages import bad_request, ok
-from services.middleware import file_middleware, file_version_middleware
+from polydrive.services.middleware import file_middleware, file_version_middleware
 
 
 @app.route('/files', methods=['POST'])
