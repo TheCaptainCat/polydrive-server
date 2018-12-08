@@ -4,26 +4,48 @@ from flask_login import login_required, current_user
 from polydrive import app
 from polydrive.models import File, Version
 from polydrive.config import db
-from polydrive.services.messages import bad_request, ok
-from polydrive.services.middleware import file_middleware, file_version_middleware
+from polydrive.services.messages import bad_request, ok, created
+from polydrive.services.middleware import file_middleware, file_version_middleware, parent_middleware
 
 
 @app.route('/files', methods=['POST'])
 @login_required
+@parent_middleware
 def file_upload():
     if 'file' not in request.files:
         return bad_request('File parameter required.')
     buffer = request.files['file']
     if buffer.filename == '':
         return bad_request('No selected file.')
+    parent_id = request.form.get('parent_id', None)
+    parent = None
+    if parent_id is not None:
+        parent = File.query.get(parent_id)
     f_details = buffer.filename.rsplit('.', 1)
     filename = f_details[0]
     extension = None
     if len(f_details) > 1:
         extension = f_details[1]
-    file = File.create(filename, extension, current_user, buffer)
+    file = File.create(filename, extension, current_user, parent, buffer)
     db.session.commit()
-    return ok('File uploaded.', file.deep)
+    return created('File uploaded.', file.deep)
+
+
+@app.route('/folder', methods=['POST'])
+@login_required
+@parent_middleware
+def folder_create():
+    content = request.get_json()
+    name = content.get('name', None)
+    if name is None:
+        return bad_request('Name parameter required.')
+    parent_id = content.get('parent_id', None)
+    parent = None
+    if parent_id is not None:
+        parent = File.query.get(parent_id)
+    folder = File.create_folder(name, current_user, parent)
+    db.session.commit()
+    return created('Folder created', folder.deep)
 
 
 @app.route('/files/<int:file_id>', methods=['GET'])

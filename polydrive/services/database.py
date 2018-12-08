@@ -19,7 +19,7 @@ def fill_db(path):
 
         users = y.get('users', None)
         for user in users:
-            u = User(username=user['username'], password=user['password'])
+            u = User.create(username=user['username'], password=user['password'], email=None)
             db.session.add(u)
         db.session.commit()
 
