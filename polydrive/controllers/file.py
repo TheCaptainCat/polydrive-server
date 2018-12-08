@@ -2,10 +2,10 @@ from flask import request, send_file
 from flask_login import login_required, current_user
 
 from polydrive import app
-from polydrive.models import File
+from polydrive.models import File, Version
 from polydrive.services import db
 from polydrive.services.messages import bad_request, ok
-from services.middleware import file_middleware
+from services.middleware import file_middleware, file_version_middleware
 
 
 @app.route('/files', methods=['POST'])
@@ -65,3 +65,21 @@ def file_update(file_id):
     File.add_version(file, buffer)
     db.session.commit()
     return ok('File version uploaded.', file.deep)
+
+
+@app.route('/files/<int:file_id>/versions/<int:version_id>', methods=['GET'])
+@login_required
+@file_middleware
+@file_version_middleware
+def file_version_details(file_id, version_id):
+    version = Version.query.filter_by(id=version_id, file_id=file_id).first()
+    return ok('OK', version.serialized)
+
+
+@app.route('/files/<int:file_id>/versions/<int:version_id>/file', methods=['GET'])
+@login_required
+@file_middleware
+@file_version_middleware
+def file_version_download(file_id, version_id):
+    version = Version.query.filter_by(id=version_id, file_id=file_id).first()
+    return send_file(version.real_path, mimetype=version.file.mime)

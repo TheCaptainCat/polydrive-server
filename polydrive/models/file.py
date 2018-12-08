@@ -15,7 +15,9 @@ class File(db.Model):
     extension = db.Column(db.String(10), nullable=True)
     mime = db.Column(db.String(255), nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    parent_id = db.Column(db.Integer, db.ForeignKey('files.id'))
     versions = db.relationship('Version', lazy='subquery', backref=db.backref('file', lazy=True))
+    children = db.relationship('File', lazy='subquery', backref=db.backref('parent', lazy=True))
 
     @property
     def real_name(self):
@@ -38,6 +40,7 @@ class File(db.Model):
     def deep(self):
         json = self.serialized
         json['version'] = [v.serialized for v in self.versions]
+        json['children'] = [f.deep for f in self.children]
         return json
 
     @staticmethod
