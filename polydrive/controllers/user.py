@@ -2,7 +2,7 @@ from flask import request
 from flask_login import login_required, login_user, logout_user, current_user
 
 from polydrive import app
-from polydrive.config import bcrypt
+from polydrive.config import bcrypt, db
 from polydrive.services.messages import ok, created, bad_request, unauthorized
 from polydrive.models import User
 
@@ -66,6 +66,7 @@ def user_register():
     if len(messages) > 0:
         return bad_request(messages)
     user = User.create(username, password, email)
+    db.session.commit()
     return created('User created', user.serialized)
 
 

@@ -82,5 +82,4 @@ class User(db.Model):
         """
         user = User(username=username, password=bcrypt.generate_password_hash(password), email=email)
         db.session.add(user)
-        db.session.commit()
         return user

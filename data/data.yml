@@ -1,7 +1,43 @@
 users:
   - username: pierre
     password: password42
+    files:
+      - name: Documents
+        type: folder
+        children:
+          - name: codes.txt
+            type: file
+          - name: work.txt
+            type: file
+      - name: hello.txt
+        type: file
+      - name: Pictures
+        type: folder
+        children:
+          - name: list.txt
+            type: file
+          - name: X-Mas
+            type: folder
   - username: hugo
     password: password42
+    files:
+      - name: Mes Documents
+        type: folder
+        children:
+          - name: codes_triche.txt
+            type: file
+          - name: travail.txt
+            type: file
   - username: gaetan
     password: password42
+    files:
+      - name: My Documents
+        type: folder
+        children:
+          - name: recipes.txt
+            type: file
+          - name: Pictures
+            type: folder
+            children:
+              - name: list.txt
+                type: file
