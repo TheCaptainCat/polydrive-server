@@ -7,10 +7,19 @@ from polydrive.services.messages import not_found, unauthorized, bad_request
 from polydrive.services.files import check_file_rights
 
 
+def extract_parameter(param_name):
+    param = request.view_args.get(param_name, None)
+    if param is None:
+        param = request.form.get(param_name, None)
+    if param is None:
+        param = request.get_json().get(param_name, None)
+    return param
+
+
 def file_middleware(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        file_id = request.view_args.get('file_id', None)
+        file_id = extract_parameter('file_id')
         if file_id is None:
             return bad_request('No file id provided.')
         file = File.query.get(file_id)
@@ -25,8 +34,8 @@ def file_middleware(f):
 def file_version_middleware(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        file_id = request.view_args.get('file_id', None)
-        version_id = request.view_args.get('version_id', None)
+        file_id = extract_parameter('file_id')
+        version_id = extract_parameter('version_id')
         if version_id is None or file_id is None:
             return bad_request('No file version id provided.')
         version = Version.query.filter_by(id=version_id, file_id=file_id).first()
@@ -39,7 +48,7 @@ def file_version_middleware(f):
 def parent_middleware(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        parent_id = request.form.get('parent_id', None)
+        parent_id = extract_parameter('parent_id')
         if parent_id is None:
             return f(*args, **kwargs)
         folder = File.query.get(parent_id)

@@ -36,7 +36,7 @@ def file_upload():
 @login_required
 @parent_middleware
 def files_get_list(parent_id=None):
-    files = File.query.filter(File.owner_id == current_user.id, File.parent_id == parent_id).all()
+    files = File.query.filter(File.parent_id == parent_id).all()
     return ok('OK', [f.deep for f in files])
 
 

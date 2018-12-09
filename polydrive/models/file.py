@@ -50,7 +50,7 @@ class File(db.Model):
     def deep(self):
         json = self.serialized
         if self.type == file_type.file:
-            json['version'] = [v.serialized for v in self.versions]
+            json['versions'] = [v.serialized for v in self.versions]
         if self.type == file_type.folder:
             json['children'] = [f.deep for f in self.children]
         json['viewers'] = [u.serialize for u in self.viewers]
