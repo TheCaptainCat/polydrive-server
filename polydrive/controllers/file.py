@@ -31,7 +31,15 @@ def file_upload():
     return created('File uploaded.', file.deep)
 
 
-@app.route('/folder', methods=['POST'])
+@app.route('/folders')
+@app.route('/folders/<int:parent_id>', methods=['GET'])
+@parent_middleware
+def files_get_list(parent_id=None):
+    files = File.query.filter(File.owner_id == current_user.id, File.parent_id == parent_id).all()
+    return ok('OK', [f.deep for f in files])
+
+
+@app.route('/folders', methods=['POST'])
 @login_required
 @parent_middleware
 def folder_create():

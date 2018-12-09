@@ -2,17 +2,10 @@ from polydrive.config import db
 from polydrive.models import Version
 
 
-class FileType:
-    @property
-    def file(self):
-        return 'file'
-
-    @property
-    def folder(self):
-        return 'folder'
-
-
-file_type = FileType()
+users_files = db.Table('users_files',
+                       db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+                       db.Column('file_id', db.Integer, db.ForeignKey('files.id'), primary_key=True),
+                       db.Column('role', db.Text, nullable=False))
 
 
 class File(db.Model):
@@ -33,6 +26,7 @@ class File(db.Model):
 
     versions = db.relationship('Version', lazy='subquery', backref=db.backref('file', lazy=True))
     parent = db.relationship('File', remote_side=[id], lazy=True, backref=db.backref('children', lazy='subquery'))
+    viewers = db.relationship('User', secondary=users_files, lazy='subquery', backref=db.backref('viewing', lazy=True))
 
     @property
     def real_name(self):
@@ -59,6 +53,7 @@ class File(db.Model):
             json['version'] = [v.serialized for v in self.versions]
         if self.type == file_type.folder:
             json['children'] = [f.deep for f in self.children]
+        json['viewers'] = [u.serialize for u in self.viewers]
         return json
 
     @staticmethod
@@ -86,3 +81,29 @@ class File(db.Model):
         for version in file.versions:
             Version.delete(version)
         db.session.delete(file)
+
+
+class FileType:
+    @property
+    def file(self):
+        return 'file'
+
+    @property
+    def folder(self):
+        return 'folder'
+
+
+file_type = FileType()
+
+
+class Role:
+    @property
+    def edit(self):
+        return 'edit'
+
+    @property
+    def view(self):
+        return 'view'
+
+
+role = Role()
