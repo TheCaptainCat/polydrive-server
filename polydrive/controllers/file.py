@@ -33,6 +33,7 @@ def file_upload():
 
 @app.route('/folders')
 @app.route('/folders/<int:parent_id>', methods=['GET'])
+@login_required
 @parent_middleware
 def files_get_list(parent_id=None):
     files = File.query.filter(File.owner_id == current_user.id, File.parent_id == parent_id).all()
