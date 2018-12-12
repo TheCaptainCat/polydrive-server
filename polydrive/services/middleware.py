@@ -11,7 +11,7 @@ def extract_parameter(param_name):
     param = request.view_args.get(param_name, None)
     if param is None:
         param = request.form.get(param_name, None)
-    if param is None:
+    if param is None and request.get_json() is not None:
         param = request.get_json().get(param_name, None)
     return param
 
