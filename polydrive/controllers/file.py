@@ -31,7 +31,7 @@ def file_upload():
     return created('File uploaded.', file.deep)
 
 
-@app.route('/folders')
+@app.route('/folders', methods=['GET'])
 @app.route('/folders/<int:parent_id>', methods=['GET'])
 @login_required
 @parent_middleware
