@@ -5,19 +5,29 @@ from polydrive import app
 from polydrive.models import File, Version
 from polydrive.config import db
 from polydrive.services.messages import bad_request, ok, created
-from polydrive.services.middleware import file_middleware, file_version_middleware, parent_middleware
+from polydrive.services.middleware import rights_middleware, file_version_middleware, \
+    parent_middleware, file_middleware
 
 
 @app.route('/files', methods=['POST'])
+@app.route('/files/<int:parent_id>', methods=['POST'])
 @login_required
 @parent_middleware
-def file_upload():
+def file_upload(parent_id=None):
+    """
+    Upload a file.
+
+    The file must be a multi-part parameter called "file". If no parent id is given,
+    the file is located on user's root.
+
+    :param parent_id: the parent's id, null if root folder
+    :return: the created file's details
+    """
     if 'file' not in request.files:
         return bad_request('File parameter required.')
     buffer = request.files['file']
     if buffer.filename == '':
         return bad_request('No selected file.')
-    parent_id = request.form.get('parent_id', None)
     parent = None
     if parent_id is not None:
         parent = File.query.get(parent_id)
@@ -36,6 +46,14 @@ def file_upload():
 @login_required
 @parent_middleware
 def files_get_list(parent_id=None):
+    """
+    Get the recursive content of a folder.
+
+    If no parent id is given, returns the content of user's root folder.
+
+    :param parent_id: the parent's id, null if root folder
+    :return: the recursive list of the folder's content
+    """
     files = File.query.filter(File.parent_id == parent_id, File.owner_id == current_user.id).all()
     return ok('OK', [f.deep for f in files])
 
@@ -44,6 +62,14 @@ def files_get_list(parent_id=None):
 @login_required
 @parent_middleware
 def folder_create():
+    """
+    Create a folder.
+
+    Create a folder with given details. The name is required. If no parent id is given,
+    the folder is created in user's root folder.
+
+    :return: the created folder's details
+    """
     content = request.get_json()
     name = content.get('name', None)
     if name is None:
@@ -59,24 +85,51 @@ def folder_create():
 
 @app.route('/files/<int:file_id>', methods=['GET'])
 @login_required
-@file_middleware
+@rights_middleware
 def file_details(file_id):
+    """
+    Get a resource's details.
+
+    Return the specified resource's details. If the resource is a folder, the recursive
+    hierarchy is also returned.
+
+    :param file_id: the requested resource's id
+    :return: the requested resource's details
+    """
     file = File.query.get(file_id)
     return ok('OK', file.deep)
 
 
 @app.route('/files/<int:file_id>/file', methods=['GET'])
 @login_required
+@rights_middleware
 @file_middleware
 def file_download(file_id):
+    """
+    Get a file content.
+
+    The file's blob is sent into the body.
+
+    :param file_id: the requested file's id
+    :return: the requested file's content
+    """
     file = File.query.get(file_id)
     return send_file(file.last_version.real_path, mimetype=file.mime)
 
 
 @app.route('/files/<int:file_id>', methods=['DELETE'])
 @login_required
-@file_middleware
+@rights_middleware
 def file_delete(file_id):
+    """
+    Delete a resource.
+
+    If the resource is a file, all versions and files on the disk will be removed.
+    If the resource is a folder, all children are also deleted.
+
+    :param file_id: the requested resource's id
+    :return:
+    """
     file = File.query.get(file_id)
     File.delete(file)
     db.session.commit()
@@ -85,7 +138,7 @@ def file_delete(file_id):
 
 @app.route('/files/<int:file_id>', methods=['PUT'])
 @login_required
-@file_middleware
+@rights_middleware
 def file_update(file_id):
     if 'file' not in request.files:
         return bad_request('File parameter required.')
@@ -100,7 +153,7 @@ def file_update(file_id):
 
 @app.route('/files/<int:file_id>/versions/<int:version_id>', methods=['GET'])
 @login_required
-@file_middleware
+@rights_middleware
 @file_version_middleware
 def file_version_details(file_id, version_id):
     version = Version.query.filter_by(id=version_id, file_id=file_id).first()
@@ -109,7 +162,7 @@ def file_version_details(file_id, version_id):
 
 @app.route('/files/<int:file_id>/versions/<int:version_id>/file', methods=['GET'])
 @login_required
-@file_middleware
+@rights_middleware
 @file_version_middleware
 def file_version_download(file_id, version_id):
     version = Version.query.filter_by(id=version_id, file_id=file_id).first()

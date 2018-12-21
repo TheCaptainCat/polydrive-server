@@ -25,7 +25,8 @@ def fill_db(path):
 
             users_dict = y.get('users', None)
             for user_dict in users_dict:
-                user = User.create(username=user_dict['username'], password=user_dict['password'], email=None)
+                user = User.create(username=user_dict['username'], password=user_dict['password'],
+                                   email=None)
                 db.session.add(user)
                 parsed_users.append({'user': user,
                                      'files': user_dict.get('files', None),
@@ -34,7 +35,8 @@ def fill_db(path):
 
             for user_dict in parsed_users:
                 user = user_dict['user']
-                client.post('/login', data=json.dumps({'username': user.username, 'password': user_dict['password']}),
+                client.post('/login', data=json.dumps(
+                    {'username': user.username, 'password': user_dict['password']}),
                             content_type='application/json')
                 files_dict = user_dict['files']
 
@@ -42,9 +44,10 @@ def fill_db(path):
                     data = {
                         'file': (BytesIO(b'This is a content'), f_dict['name'])
                     }
+                    url = '/files'
                     if parent_id is not None:
-                        data['parent_id'] = parent_id
-                    client.post('/files', data=data)
+                        url = f'{url}/{parent_id}'
+                    client.post(url, data=data)
 
                 def create_folder(f_dict, parent_id=None):
                     data = {
@@ -52,7 +55,8 @@ def fill_db(path):
                     }
                     if parent_id is not None:
                         data['parent_id'] = parent_id
-                    rv = client.post('/folders', data=json.dumps(data), content_type='application/json')
+                    rv = client.post('/folders', data=json.dumps(data),
+                                     content_type='application/json')
                     content = json.loads(rv.data)
                     f_id = content['content']['id']
                     if f_dict.get('children', None) is not None:
