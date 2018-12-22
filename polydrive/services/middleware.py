@@ -2,9 +2,9 @@ from functools import wraps
 from flask import request
 from flask_login import current_user
 
-from polydrive.models import File, Version, file_type
+from polydrive.models import Resource, Version, resource_type
 from polydrive.services.messages import not_found, unauthorized, bad_request
-from polydrive.services.files import check_file_rights
+from polydrive.services.files import check_resource_rights
 
 
 def extract_parameter(param_name):
@@ -26,19 +26,19 @@ def extract_parameter(param_name):
     return param
 
 
-def rights_middleware(f):
+def resource_middleware(f):
     """
     Check if the user can access the requested resource.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        file_id = extract_parameter('file_id')
-        if file_id is None:
-            return bad_request('No file id provided.')
-        file = File.query.get(file_id)
-        if file is None:
+        r_id = extract_parameter('r_id')
+        if r_id is None:
+            return bad_request('No resource id provided.')
+        r_id = Resource.query.get(r_id)
+        if r_id is None:
             return not_found('This resource does not exist.')
-        if not check_file_rights(file, current_user):
+        if not check_resource_rights(r_id, current_user):
             return unauthorized('You cannot access this resource.')
         return f(*args, **kwargs)
 
@@ -53,9 +53,9 @@ def file_middleware(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        file_id = extract_parameter('file_id')
-        file = File.query.get(file_id)
-        if file.type != file_type.file:
+        r_id = extract_parameter('r_id')
+        file = Resource.query.get(r_id)
+        if file.type != resource_type.file:
             return bad_request('Resource is not a file.')
         return f(*args, **kwargs)
 
@@ -70,11 +70,11 @@ def file_version_middleware(f):
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        file_id = extract_parameter('file_id')
+        r_id = extract_parameter('r_id')
         version_id = extract_parameter('version_id')
-        if version_id is None or file_id is None:
+        if version_id is None or r_id is None:
             return bad_request('No file version id provided.')
-        version = Version.query.filter_by(id=version_id, file_id=file_id).first()
+        version = Version.query.filter_by(id=version_id, r_id=r_id).first()
         if version is None:
             return not_found('This resource does not exist.')
         return f(*args, **kwargs)
@@ -91,12 +91,12 @@ def parent_middleware(f):
         parent_id = extract_parameter('parent_id')
         if parent_id is None:
             return f(*args, **kwargs)
-        folder = File.query.get(parent_id)
+        folder = Resource.query.get(parent_id)
         if folder is None:
             return not_found('Parent folder does not exist.')
-        if folder.type != file_type.folder:
+        if folder.type != resource_type.folder:
             return bad_request('Parent is not a folder.')
-        if not check_file_rights(folder, current_user):
+        if not check_resource_rights(folder, current_user):
             return unauthorized('You cannot access parent folder.')
         return f(*args, **kwargs)
 

@@ -17,7 +17,7 @@ class Version(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     random_string = db.Column(db.String(100), nullable=False, unique=True)
-    file_id = db.Column(db.Integer, db.ForeignKey('files.id'))
+    r_id = db.Column(db.Integer, db.ForeignKey('resources.id'))
     created = db.Column(db.DateTime, nullable=False)
 
     @property

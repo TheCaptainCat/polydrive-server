@@ -1,20 +1,21 @@
 from polydrive.config import db
 from polydrive.models import Version
 
-
 users_files = db.Table('users_files',
-                       db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
-                       db.Column('file_id', db.Integer, db.ForeignKey('files.id'), primary_key=True),
+                       db.Column('user_id', db.Integer, db.ForeignKey('users.id'),
+                                 primary_key=True),
+                       db.Column('r_id', db.Integer, db.ForeignKey('resources.id'),
+                                 primary_key=True),
                        db.Column('role', db.Text, nullable=False))
 
 
-class File(db.Model):
+class Resource(db.Model):
     """
-    The file model.
+    The resource model.
 
-    Represents a file or folder entity.
+    Represents a file or folder.
     """
-    __tablename__ = 'files'
+    __tablename__ = 'resources'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Text, nullable=False)
@@ -22,11 +23,13 @@ class File(db.Model):
     mime = db.Column(db.Text, nullable=True)
     type = db.Column(db.Integer, nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    parent_id = db.Column(db.Integer, db.ForeignKey('files.id'))
+    parent_id = db.Column(db.Integer, db.ForeignKey('resources.id'))
 
     versions = db.relationship('Version', lazy='subquery', backref=db.backref('file', lazy=True))
-    parent = db.relationship('File', remote_side=[id], lazy=True, backref=db.backref('children', lazy='subquery'))
-    viewers = db.relationship('User', secondary=users_files, lazy='subquery', backref=db.backref('viewing', lazy=True))
+    parent = db.relationship('Resource', remote_side=[id], lazy=True,
+                             backref=db.backref('children', lazy='subquery'))
+    viewers = db.relationship('User', secondary=users_files, lazy='subquery',
+                              backref=db.backref('viewing', lazy=True))
 
     @property
     def real_name(self):
@@ -49,9 +52,9 @@ class File(db.Model):
     @property
     def deep(self):
         json = self.serialized
-        if self.type == file_type.file:
+        if self.type == resource_type.file:
             json['versions'] = [v.serialized for v in self.versions]
-        if self.type == file_type.folder:
+        if self.type == resource_type.folder:
             json['children'] = [f.deep for f in self.children]
         json['viewers'] = [u.serialize for u in self.viewers]
         return json
@@ -59,14 +62,15 @@ class File(db.Model):
     @staticmethod
     def create(name, extension, owner, parent, buffer):
         mime = buffer.content_type
-        file = File(name=name, extension=extension, mime=mime, parent=parent, owner=owner, type=file_type.file)
+        file = Resource(name=name, extension=extension, mime=mime, parent=parent, owner=owner,
+                        type=resource_type.file)
         file.versions.append(Version.create(file, buffer))
         db.session.add(file)
         return file
 
     @staticmethod
     def create_folder(name, owner, parent):
-        folder = File(name=name, owner=owner, parent=parent, type=file_type.folder)
+        folder = Resource(name=name, owner=owner, parent=parent, type=resource_type.folder)
         db.session.add(folder)
         return folder
 
@@ -83,7 +87,7 @@ class File(db.Model):
         db.session.delete(file)
 
 
-class FileType:
+class ResourceType:
     @property
     def file(self):
         return 'file'
@@ -93,7 +97,7 @@ class FileType:
         return 'folder'
 
 
-file_type = FileType()
+resource_type = ResourceType()
 
 
 class Role:

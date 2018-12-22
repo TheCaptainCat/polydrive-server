@@ -13,7 +13,7 @@ class User(db.Model):
     username = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=True)
-    files = db.relationship('File', lazy=True, backref=db.backref('owner', lazy='subquery'))
+    files = db.relationship('Resource', lazy=True, backref=db.backref('owner', lazy='subquery'))
 
     @property
     def is_authenticated(self):
