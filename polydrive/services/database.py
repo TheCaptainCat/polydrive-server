@@ -44,18 +44,19 @@ def fill_db(path):
                     data = {
                         'file': (BytesIO(b'This is a content'), f_dict['name'])
                     }
-                    url = '/files'
+                    url = '/res/upload'
                     if parent_id is not None:
                         url = f'{url}/{parent_id}'
                     client.post(url, data=data)
 
                 def create_folder(f_dict, parent_id=None):
                     data = {
-                        'name': f_dict['name']
+                        'name': f_dict['name'],
+                        'type': 'folder'
                     }
                     if parent_id is not None:
                         data['parent_id'] = parent_id
-                    rv = client.post('/folders', data=json.dumps(data),
+                    rv = client.post('/res', data=json.dumps(data),
                                      content_type='application/json')
                     content = json.loads(rv.data)
                     f_id = content['content']['id']

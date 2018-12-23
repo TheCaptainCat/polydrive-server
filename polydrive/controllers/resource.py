@@ -167,10 +167,10 @@ def file_upload_version(r_id):
 @file_version_middleware
 def file_version_details(r_id, version_id):
     """
+    Get the details of a specific version of a file.
 
-
-    :param r_id:
-    :param version_id:
+    :param r_id: the file's id
+    :param version_id: the version's id
     :return:
     """
     version = Version.query.filter_by(id=version_id, r_id=r_id).first()
@@ -182,5 +182,12 @@ def file_version_details(r_id, version_id):
 @resource_middleware
 @file_version_middleware
 def file_version_download(r_id, version_id):
+    """
+    Download the content of a specific version of a file.
+
+    :param r_id: the file's id
+    :param version_id: the version's id
+    :return:
+    """
     version = Version.query.filter_by(id=version_id, r_id=r_id).first()
     return send_file(version.real_path, mimetype=version.file.mime)
