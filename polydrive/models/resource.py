@@ -1,13 +1,6 @@
 from polydrive.config import db
 from polydrive.models import Version
 
-users_files = db.Table('users_files',
-                       db.Column('user_id', db.Integer, db.ForeignKey('users.id'),
-                                 primary_key=True),
-                       db.Column('r_id', db.Integer, db.ForeignKey('resources.id'),
-                                 primary_key=True),
-                       db.Column('role', db.Text, nullable=False))
-
 
 class Resource(db.Model):
     """
@@ -22,14 +15,13 @@ class Resource(db.Model):
     extension = db.Column(db.Text, nullable=True)
     mime = db.Column(db.Text, nullable=True)
     type = db.Column(db.Integer, nullable=False)
-    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    parent_id = db.Column(db.Integer, db.ForeignKey('resources.id'))
+    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    parent_id = db.Column(db.Integer, db.ForeignKey('resources.id'), nullable=True)
 
     versions = db.relationship('Version', lazy='subquery', backref=db.backref('file', lazy=True))
     parent = db.relationship('Resource', remote_side=[id], lazy=True,
                              backref=db.backref('children', lazy='subquery'))
-    viewers = db.relationship('User', secondary=users_files, lazy='subquery',
-                              backref=db.backref('viewing', lazy=True))
+    roles = db.relationship('Role', lazy='subquery', backref=db.backref('resource', lazy=True))
 
     @property
     def real_name(self):
@@ -56,7 +48,7 @@ class Resource(db.Model):
             json['versions'] = [v.serialized for v in self.versions]
         if self.type == resource_type.folder:
             json['children'] = [f.deep for f in self.children]
-        json['viewers'] = [u.serialize for u in self.viewers]
+        json['roles'] = [r.deep for r in self.roles]
         return json
 
     @staticmethod
@@ -105,16 +97,3 @@ class ResourceType:
 
 
 resource_type = ResourceType()
-
-
-class Role:
-    @property
-    def edit(self):
-        return 'edit'
-
-    @property
-    def view(self):
-        return 'view'
-
-
-role = Role()
