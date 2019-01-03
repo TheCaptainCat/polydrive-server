@@ -75,16 +75,20 @@ class Resource(db.Model):
         return folder
 
     @staticmethod
-    def add_version(file, buffer):
-        version = Version.create(file, buffer)
-        file.versions.append(version)
+    def add_version(res, buffer):
+        version = Version.create(res, buffer)
+        res.versions.append(version)
         return version
 
     @staticmethod
-    def delete(file):
-        for version in file.versions:
-            Version.delete(version)
-        db.session.delete(file)
+    def delete(res):
+        if res.type == resource_type.file:
+            for version in res.versions:
+                Version.delete(version)
+        if res.type == resource_type.folder:
+            for child in res.children:
+                Resource.delete(child)
+        db.session.delete(res)
 
 
 class ResourceType:
@@ -95,6 +99,9 @@ class ResourceType:
     @property
     def folder(self):
         return 'folder'
+
+    def __contains__(self, item):
+        return item in ['file', 'folder']
 
 
 resource_type = ResourceType()

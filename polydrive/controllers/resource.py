@@ -41,7 +41,7 @@ def resource_details(r_id=None):
 
 @app.route('/res', methods=['POST'])
 @login_required
-@parent_middleware
+@parent_middleware(False)
 def resource_create():
     """
     Create a resource.
@@ -59,8 +59,11 @@ def resource_create():
     r_type = content.get('type', None)
     if r_type is None:
         messages.append('Type parameter required.')
-    if r_type == resource_type.file:
-        messages.append('Cannot create file without content.')
+    else:
+        if r_type == resource_type.file:
+            messages.append('Cannot create file without content.')
+        if r_type not in resource_type:
+            messages.append('Not a valid type')
     if len(messages) > 0:
         return bad_request(messages)
     parent_id = content.get('parent_id', None)
@@ -94,7 +97,7 @@ def file_delete(r_id):
 @app.route('/res/upload', methods=['POST'])
 @app.route('/res/upload/<int:parent_id>', methods=['POST'])
 @login_required
-@parent_middleware
+@parent_middleware(False)
 def file_upload(parent_id=None):
     """
     Upload a file.
@@ -171,10 +174,27 @@ def file_version_details(r_id, version_id):
 
     :param r_id: the file's id
     :param version_id: the version's id
-    :return:
+    :return: the version's details
     """
     version = Version.query.filter_by(id=version_id, r_id=r_id).first()
     return ok('OK', version.serialized)
+
+
+@app.route('/res/<int:r_id>/<int:version_id>', methods=['DELETE'])
+@login_required
+@resource_middleware
+@file_version_middleware
+def file_version_delete(r_id, version_id):
+    """
+    Delete a specific version of a file.
+
+    :param r_id: the file's id
+    :param version_id: the version's id
+    :return: the version's details
+    """
+    version = Version.query.filter_by(id=version_id, r_id=r_id).first()
+    Version.delete(version)
+    return ok('File version successfully deleted.', version.serialized)
 
 
 @app.route('/res/<int:r_id>/<int:version_id>/download', methods=['GET'])

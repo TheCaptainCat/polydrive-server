@@ -30,8 +30,9 @@ def resource_middleware(f):
     """
     Check if the user can access the requested resource.
     """
+
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         r_id = extract_parameter('r_id')
         if r_id is None:
             return bad_request('No resource id provided.')
@@ -42,7 +43,7 @@ def resource_middleware(f):
             return unauthorized('You cannot access this resource.')
         return f(*args, **kwargs)
 
-    return decorated_function
+    return wrapper
 
 
 def file_middleware(f):
@@ -51,15 +52,16 @@ def file_middleware(f):
 
     This decorator must always be called after @rights_middleware().
     """
+
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         r_id = extract_parameter('r_id')
         file = Resource.query.get(r_id)
         if file.type != resource_type.file:
             return bad_request('Resource is not a file.')
         return f(*args, **kwargs)
 
-    return decorated_function
+    return wrapper
 
 
 def file_version_middleware(f):
@@ -68,8 +70,9 @@ def file_version_middleware(f):
 
     This decorator must always be called after @rights_middleware().
     """
+
     @wraps(f)
-    def decorated_function(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         r_id = extract_parameter('r_id')
         version_id = extract_parameter('version_id')
         if version_id is None or r_id is None:
@@ -79,25 +82,32 @@ def file_version_middleware(f):
             return not_found('This resource does not exist.')
         return f(*args, **kwargs)
 
-    return decorated_function
+    return wrapper
 
 
-def parent_middleware(f):
+def parent_middleware(required):
     """
     Check if the parent is a folder and if the user can access it.
     """
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        parent_id = extract_parameter('parent_id')
-        if parent_id is None:
-            return f(*args, **kwargs)
-        folder = Resource.query.get(parent_id)
-        if folder is None:
-            return not_found('Parent folder does not exist.')
-        if folder.type != resource_type.folder:
-            return bad_request('Parent is not a folder.')
-        if not check_resource_rights(folder, current_user):
-            return unauthorized('You cannot access parent folder.')
-        return f(*args, **kwargs)
 
-    return decorated_function
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            parent_id = extract_parameter('parent_id')
+            if parent_id is None:
+                if not required:
+                    return f(*args, **kwargs)
+                else:
+                    return bad_request('Parameter parent_id required.')
+            folder = Resource.query.get(parent_id)
+            if folder is None:
+                return not_found('Parent folder does not exist.')
+            if folder.type != resource_type.folder:
+                return bad_request('Parent is not a folder.')
+            if not check_resource_rights(folder, current_user):
+                return unauthorized('You cannot access parent folder.')
+            return f(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
