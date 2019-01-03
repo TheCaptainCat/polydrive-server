@@ -7,5 +7,5 @@ login = LoginManager(app)
 
 
 @login.user_loader
-def load_user(user_id):
-    return User.query.get(user_id)
+def load_user(useres_id):
+    return User.query.get(useres_id)

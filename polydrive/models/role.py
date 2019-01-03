@@ -7,14 +7,14 @@ class Role(db.Model):
     """
     __tablename__ = 'roles'
 
-    r_id = db.Column(db.Integer, db.ForeignKey('resources.id'), primary_key=True)
-    u_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+    res_id = db.Column(db.Integer, db.ForeignKey('resources.id'), primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
     type = db.Column(db.Text, nullable=False)
 
     @property
     def serialized(self):
         return {
-            'type': self.role
+            'type': self.type
         }
 
     @property

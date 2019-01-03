@@ -1,4 +1,4 @@
-openapi: 3.0.1
+openapi: 3.0.0
 info:
   title: PolyDrive API
   description: API for the awesome PolyDrive project!
@@ -7,6 +7,54 @@ servers:
   - url: 'http://api.example.com/v1'
     description: test server
 paths:
+  /res:
+    get:
+      tags:
+        - resources
+      summary: Return root content.
+      description: >-
+        Return the list of all user's resources with no parent. Content is
+        recursive.
+      responses:
+        '200':
+          description: List of resources.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Resource'
+  '/res/{res_id}':
+    parameters:
+      - $ref: '#/components/parameters/res_id'
+    get:
+      tags:
+        - resources
+      summary: Return resource's details.
+      description: >-
+        Return the details of the specified resource. If the resource is a
+        folder, return its recursive content.
+      responses:
+        '200':
+          description: List of resources.
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Resource'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /login:
     post:
       tags:
@@ -28,6 +76,15 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 components:
+  parameters:
+    res_id:
+      name: res_id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: The resource's identifier
   schemas:
     ApiResponse:
       type: object
@@ -50,6 +107,24 @@ components:
         email:
           type: string
           format: email
+    Resource:
+      type: object
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        extension:
+          type: string
+        mime:
+          type: string
+        type:
+          type: string
+          enum:
+            - file
+            - folder
+        owner:
+          $ref: '#/components/schemas/User'
   responses:
     NotFound:
       description: The specified resource was not found.

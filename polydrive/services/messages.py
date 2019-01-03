@@ -43,3 +43,7 @@ def unauthorized(messages=None, content=None):
 
 def not_found(messages=None, content=None):
     return build_message(404, 'NOT FOUND', messages, content)
+
+
+def conflict(messages=None, content=None):
+    return build_message(409, 'CONFLICT', messages, content)

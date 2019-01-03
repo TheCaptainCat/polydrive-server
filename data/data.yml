@@ -9,6 +9,23 @@ users:
             type: file
           - name: work.txt
             type: file
+          - name: Project X
+            type: folder
+            children:
+              - name: script.py
+                type: file
+              - name: doc
+                type: folder
+                children:
+                  - name: README.md
+                    type: file
+                  - name: specs.txt
+                    type: file
+            roles:
+              - user: gaetan
+                type: view
+              - user: hugo
+                type: edit
       - name: hello.txt
         type: file
       - name: Pictures

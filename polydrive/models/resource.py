@@ -15,7 +15,7 @@ class Resource(db.Model):
     extension = db.Column(db.Text, nullable=True)
     mime = db.Column(db.Text, nullable=True)
     type = db.Column(db.Integer, nullable=False)
-    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    owneres_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('resources.id'), nullable=True)
 
     versions = db.relationship('Version', lazy='subquery', backref=db.backref('file', lazy=True))
@@ -44,6 +44,7 @@ class Resource(db.Model):
     @property
     def deep(self):
         json = self.serialized
+        json['owner'] = self.owner.serialized
         if self.type == resource_type.file:
             json['versions'] = [v.serialized for v in self.versions]
         if self.type == resource_type.folder:

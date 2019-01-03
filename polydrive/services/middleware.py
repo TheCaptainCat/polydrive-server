@@ -2,7 +2,7 @@ from functools import wraps
 from flask import request
 from flask_login import current_user
 
-from polydrive.models import Resource, Version, resource_type
+from polydrive.models import Resource, Version, resource_type, User
 from polydrive.services.messages import not_found, unauthorized, bad_request
 from polydrive.services.files import check_resource_rights
 
@@ -33,13 +33,13 @@ def resource_middleware(f):
 
     @wraps(f)
     def wrapper(*args, **kwargs):
-        r_id = extract_parameter('r_id')
-        if r_id is None:
+        res_id = extract_parameter('res_id')
+        if res_id is None:
             return bad_request('No resource id provided.')
-        r_id = Resource.query.get(r_id)
-        if r_id is None:
+        res_id = Resource.query.get(res_id)
+        if res_id is None:
             return not_found('This resource does not exist.')
-        if not check_resource_rights(r_id, current_user):
+        if not check_resource_rights(res_id, current_user):
             return unauthorized('You cannot access this resource.')
         return f(*args, **kwargs)
 
@@ -55,8 +55,8 @@ def file_middleware(f):
 
     @wraps(f)
     def wrapper(*args, **kwargs):
-        r_id = extract_parameter('r_id')
-        file = Resource.query.get(r_id)
+        res_id = extract_parameter('res_id')
+        file = Resource.query.get(res_id)
         if file.type != resource_type.file:
             return bad_request('Resource is not a file.')
         return f(*args, **kwargs)
@@ -73,11 +73,11 @@ def file_version_middleware(f):
 
     @wraps(f)
     def wrapper(*args, **kwargs):
-        r_id = extract_parameter('r_id')
+        res_id = extract_parameter('res_id')
         version_id = extract_parameter('version_id')
-        if version_id is None or r_id is None:
+        if version_id is None or res_id is None:
             return bad_request('No file version id provided.')
-        version = Version.query.filter_by(id=version_id, r_id=r_id).first()
+        version = Version.query.filter_by(id=version_id, res_id=res_id).first()
         if version is None:
             return not_found('This resource does not exist.')
         return f(*args, **kwargs)
@@ -98,7 +98,7 @@ def parent_middleware(required):
                 if not required:
                     return f(*args, **kwargs)
                 else:
-                    return bad_request('Parameter parent_id required.')
+                    return bad_request('No parent id provided.')
             folder = Resource.query.get(parent_id)
             if folder is None:
                 return not_found('Parent folder does not exist.')
@@ -111,3 +111,21 @@ def parent_middleware(required):
         return wrapper
 
     return decorator
+
+
+def user_middleware(f):
+    """
+    Check if the user exists.
+    """
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        user_id = extract_parameter('user_id')
+        if user_id is None:
+            return bad_request('No user id provided.')
+        user = User.query.get(user_id)
+        if user is None:
+            return not_found('User not found.')
+        return f(*args, **kwargs)
+
+    return wrapper

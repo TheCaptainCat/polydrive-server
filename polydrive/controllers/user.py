@@ -15,13 +15,15 @@ def user_login():
     :return: the user info if login is successful
     """
     content = request.get_json()
-    username = content['username']
+    if content is None:
+        content = {}
+    username = content.get('username', None)
     if username is None:
         return bad_request('Username must be submitted.')
     user = User.query.filter_by(username=username).first()
     if user is None:
         return unauthorized('Wrong credentials.')
-    password = content['password']
+    password = content.get('password', None)
     if not bcrypt.check_password_hash(user.password, password):
         return unauthorized('Wrong credentials.')
     login_user(user)
@@ -45,6 +47,8 @@ def user_register():
     """
     messages = []
     content = request.get_json()
+    if content is None:
+        content = {}
     username = content.get('username', None)
     if username is None:
         messages.append('Missing parameter: username.')
