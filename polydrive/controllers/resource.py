@@ -116,7 +116,7 @@ def file_update(res_id):
     if 'extension' in content and resource.type == resource_type.file:
         params['extension'] = content['extension']
     if 'parent_id' in content:
-        parent = Resource.query.get(content['parent'])
+        parent = Resource.query.get(content['parent_id'])
         params['parent'] = parent
     Resource.update(resource, **params)
     db.session.commit()
