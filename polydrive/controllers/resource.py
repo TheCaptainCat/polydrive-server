@@ -81,7 +81,7 @@ def resource_create():
 @app.route('/res/<int:res_id>', methods=['DELETE'])
 @login_required
 @resource_middleware
-def file_delete(res_id):
+def resource_delete(res_id):
     """
     Delete a resource.
 
@@ -101,7 +101,7 @@ def file_delete(res_id):
 @login_required
 @resource_middleware
 @parent_middleware(False)
-def file_update(res_id):
+def resource_update(res_id):
     """
     Update a resource's details.
 
@@ -116,7 +116,8 @@ def file_update(res_id):
     if 'extension' in content and resource.type == resource_type.file:
         params['extension'] = content['extension']
     if 'parent_id' in content:
-        parent = Resource.query.get(content['parent_id'])
+        parent_id = content['parent_id']
+        parent = Resource.query.get(parent_id) if parent_id is not None else None
         params['parent'] = parent
     Resource.update(resource, **params)
     db.session.commit()
