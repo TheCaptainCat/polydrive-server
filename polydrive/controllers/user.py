@@ -71,6 +71,7 @@ def user_register():
         return bad_request(messages)
     user = User.create(username, password, email)
     db.session.commit()
+    login_user(user)
     return created('User created', user.serialized)
 
 
