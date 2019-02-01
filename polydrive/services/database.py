@@ -21,19 +21,19 @@ def fill_db(path):
         with open(make_path(path)) as f:
             y = yaml.load(f)
 
-            parsed_users = []
+            parsed_users = {}
 
             users_dict = y.get('users', None)
             for user_dict in users_dict:
                 user = User.create(username=user_dict['username'], password=user_dict['password'],
                                    email=None)
                 db.session.add(user)
-                parsed_users.append({'user': user,
-                                     'files': user_dict.get('files', None),
-                                     'password': user_dict['password']})
+                parsed_users[user.username] = {'user': user,
+                                               'files': user_dict.get('files', None),
+                                               'password': user_dict['password']}
             db.session.commit()
 
-            for user_dict in parsed_users:
+            for user_dict in parsed_users.values():
                 user = user_dict['user']
                 client.post('/login', data=json.dumps(
                     {'username': user.username, 'password': user_dict['password']}),

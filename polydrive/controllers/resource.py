@@ -19,7 +19,7 @@ def root_content():
 
     :return: user's resources in root folder
     """
-    resources = Resource.query.filter_by(owneres_id=current_user.id, parent_id=None).all()
+    resources = Resource.query.filter_by(owner_id=current_user.id, parent_id=None).all()
     return ok('OK', [r.deep for r in resources])
 
 
@@ -89,12 +89,37 @@ def file_delete(res_id):
     If the resource is a folder, all children are also deleted.
 
     :param res_id: the requested resource's id
-    :return:
+    :return: the deleted resource
     """
     resource = Resource.query.get(res_id)
     Resource.delete(resource)
     db.session.commit()
     return ok('File successfully deleted.', resource.deep)
+
+
+@app.route('/res/<int:res_id>', methods=['PUT'])
+@login_required
+@resource_middleware
+@parent_middleware(False)
+def file_update(res_id):
+    """
+    Update a resource's details.
+
+    :param res_id: the requested resource's id
+    :return: the updated resource
+    """
+    resource = Resource.query.get(res_id)
+    content = request.get_json()
+    params = {}
+    if 'name' in content:
+        params['name'] = content['name']
+    if 'extension' in content and resource.type == resource_type.file:
+        params['extension'] = content['extension']
+    if 'parent' in content:
+        params['parent'] = content['parent']
+    Resource.update(resource, **params)
+    db.session.commit()
+    return ok('Resource updated', resource.deep)
 
 
 @app.route('/res/upload', methods=['POST'])

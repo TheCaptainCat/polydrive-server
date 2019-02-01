@@ -15,7 +15,7 @@ class Resource(db.Model):
     extension = db.Column(db.Text, nullable=True)
     mime = db.Column(db.Text, nullable=True)
     type = db.Column(db.Integer, nullable=False)
-    owneres_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('resources.id'), nullable=True)
 
     versions = db.relationship('Version', lazy='subquery', backref=db.backref('file', lazy=True))
@@ -60,6 +60,15 @@ class Resource(db.Model):
         file.versions.append(Version.create(file, buffer))
         db.session.add(file)
         return file
+
+    @staticmethod
+    def update(res, **kwargs):
+        if 'name' in kwargs:
+            res.name = kwargs['name']
+        if 'extension' in kwargs:
+            res.extension = kwargs['extension']
+        if 'parent' in kwargs:
+            res.parent = kwargs['parent']
 
     @staticmethod
     def create_folder(name, owner, parent):
