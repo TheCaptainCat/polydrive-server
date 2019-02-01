@@ -20,21 +20,19 @@ def shared_get():
 
 
 @app.route('/res/share/<int:res_id>/<int:user_id>', methods=['POST'])
+@app.route('/res/share/<int:res_id>/<int:user_id>/<r_type>', methods=['POST'])
 @login_required
 @resource_middleware
 @user_middleware
-def share_resource(res_id, user_id):
+def share_resource(res_id, user_id, r_type=role_type.view):
     """
     Share a resource with a user.
 
     :param res_id: resource's id
     :param user_id: user's id
+    :param r_type: type of sharing (edit or view)
     :return: created link
     """
-    content = request.get_json()
-    if content is None:
-        content = {}
-    r_type = content.get('type', role_type.view)
     res = Resource.query.get(res_id)
     user = User.query.get(user_id)
     role = Role.query.filter_by(res_id=res.id, user_id=user.id).first()

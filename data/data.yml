@@ -43,6 +43,11 @@ users:
         children:
           - name: codes_triche.txt
             type: file
+            roles:
+              - user: pierre
+                type: view
+              - user: gaetan
+                type: edit
           - name: travail.txt
             type: file
   - username: gaetan
@@ -58,3 +63,6 @@ users:
             children:
               - name: list.txt
                 type: file
+        roles:
+          - user: pierre
+            type: view

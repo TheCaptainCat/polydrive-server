@@ -47,7 +47,12 @@ def fill_db(path):
                     url = '/res/upload'
                     if parent_id is not None:
                         url = f'{url}/{parent_id}'
-                    client.post(url, data=data)
+                    rv = client.post(url, data=data)
+                    content = json.loads(rv.data)
+                    f_id = content['content']['id']
+                    if 'roles' in f_dict:
+                        for role in f_dict['roles']:
+                            client.post(f'/res/share/{f_id}/{parsed_users[role["user"]]["user"].id}/{role["type"]}')
 
                 def create_folder(f_dict, parent_id=None):
                     data = {
@@ -60,7 +65,10 @@ def fill_db(path):
                                      content_type='application/json')
                     content = json.loads(rv.data)
                     f_id = content['content']['id']
-                    if f_dict.get('children', None) is not None:
+                    if 'roles' in f_dict:
+                        for role in f_dict['roles']:
+                            client.post(f'/res/share/{f_id}/{parsed_users[role["user"]]["user"].id}/{role["type"]}')
+                    if 'children' in f_dict:
                         for child in f_dict['children']:
                             if child['type'] == 'file':
                                 create_file(child, f_id)
