@@ -4,7 +4,8 @@ from flask_login import login_required, current_user
 from polydrive import app
 from polydrive.config import db
 from polydrive.models import Resource, User, Role, role_type
-from polydrive.services.messages import ok, created, conflict
+from polydrive.services import resource_action
+from polydrive.services.messages import ok, created, conflict, bad_request
 from polydrive.services.middleware import resource_middleware, user_middleware
 
 
@@ -22,7 +23,7 @@ def shared_get():
 @app.route('/res/share/<int:res_id>/<int:user_id>', methods=['POST'])
 @app.route('/res/share/<int:res_id>/<int:user_id>/<r_type>', methods=['POST'])
 @login_required
-@resource_middleware()
+@resource_middleware(action=resource_action.write)
 @user_middleware
 def share_resource(res_id, user_id, r_type=role_type.view):
     """
@@ -33,11 +34,12 @@ def share_resource(res_id, user_id, r_type=role_type.view):
     :param r_type: type of sharing (edit or view)
     :return: created link
     """
+    if r_type not in role_type.values():
+        return bad_request('Invalid sharing type')
     res = Resource.query.get(res_id)
     user = User.query.get(user_id)
-    role = Role.query.filter_by(res_id=res.id, user_id=user.id).first()
-    if role is not None:
-        return conflict('Resource already shared with user.')
     role = Role.link(res, user, r_type)
+    if role is None:
+        return conflict('Resource already shared with user.')
     db.session.commit()
     return created('Resource shared.', role.deep)

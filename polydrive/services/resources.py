@@ -16,8 +16,8 @@ def check_resource_rights(res, user, action):
             return True
         role = Resource.get_rights(res, user)
         if role is not None:
-            if action is resource_action.read:
+            if action == resource_action.read:
                 return True
-            if action is resource_action.write:
+            if action == resource_action.write:
                 return role.type == role_type.edit
     return False
