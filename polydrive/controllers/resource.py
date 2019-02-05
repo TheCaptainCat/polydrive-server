@@ -2,8 +2,9 @@ from flask import request, send_file
 from flask_login import login_required, current_user
 
 from polydrive import app
-from polydrive.models import Resource, resource_type, Version
 from polydrive.config import db
+from polydrive.models import Resource, resource_type, Version
+from polydrive.services import resource_action
 from polydrive.services.messages import bad_request, ok, created
 from polydrive.services.middleware import resource_middleware, file_version_middleware, \
     parent_middleware, file_middleware
@@ -25,7 +26,7 @@ def root_content():
 
 @app.route('/res/<int:res_id>', methods=['GET'])
 @login_required
-@resource_middleware
+@resource_middleware()
 def resource_details(res_id=None):
     """
     Get a resource's details.
@@ -42,7 +43,7 @@ def resource_details(res_id=None):
 
 @app.route('/res', methods=['POST'])
 @login_required
-@parent_middleware(False)
+@parent_middleware(action=resource_action.write)
 def resource_create():
     """
     Create a resource.
@@ -80,7 +81,7 @@ def resource_create():
 
 @app.route('/res/<int:res_id>', methods=['DELETE'])
 @login_required
-@resource_middleware
+@resource_middleware(action=resource_action.delete)
 def resource_delete(res_id):
     """
     Delete a resource.
@@ -99,8 +100,8 @@ def resource_delete(res_id):
 
 @app.route('/res/<int:res_id>', methods=['PUT'])
 @login_required
-@resource_middleware
-@parent_middleware(False)
+@resource_middleware(action=resource_action.write)
+@parent_middleware(action=resource_action.write)
 def resource_update(res_id):
     """
     Update a resource's details.
@@ -127,7 +128,7 @@ def resource_update(res_id):
 @app.route('/res/upload', methods=['POST'])
 @app.route('/res/upload/<int:parent_id>', methods=['POST'])
 @login_required
-@parent_middleware(False)
+@parent_middleware(action=resource_action.write)
 def file_upload(parent_id=None):
     """
     Upload a file.
@@ -143,22 +144,24 @@ def file_upload(parent_id=None):
     buffer = request.files['file']
     if buffer.filename == '':
         return bad_request('No selected file.')
+    owner = current_user
     parent = None
     if parent_id is not None:
         parent = Resource.query.get(parent_id)
+        owner = parent.owner
     f_details = buffer.filename.rsplit('.', 1)
     filename = f_details[0]
     extension = None
     if len(f_details) > 1:
         extension = f_details[1]
-    file = Resource.create(filename, extension, current_user, parent, buffer)
+    file = Resource.create(filename, extension, owner, parent, buffer)
     db.session.commit()
     return created('File uploaded.', file.deep)
 
 
 @app.route('/res/<int:res_id>/download', methods=['GET'])
 @login_required
-@resource_middleware
+@resource_middleware()
 @file_middleware
 def file_download(res_id):
     """
@@ -173,9 +176,9 @@ def file_download(res_id):
     return send_file(file.last_version.real_path, mimetype=file.mime)
 
 
-@app.route('/res/<int:res_id>/upload', methods=['PUT'])
+@app.route('/res/<int:res_id>/upload', methods=['POST'])
 @login_required
-@resource_middleware
+@resource_middleware(action=resource_action.write)
 def file_upload_version(res_id):
     """
     Upload a new version for an existing file.
@@ -196,7 +199,7 @@ def file_upload_version(res_id):
 
 @app.route('/res/<int:res_id>/<int:version_id>', methods=['GET'])
 @login_required
-@resource_middleware
+@resource_middleware()
 @file_version_middleware
 def file_version_details(res_id, version_id):
     """
@@ -212,7 +215,7 @@ def file_version_details(res_id, version_id):
 
 @app.route('/res/<int:res_id>/<int:version_id>', methods=['DELETE'])
 @login_required
-@resource_middleware
+@resource_middleware(action=resource_action.delete)
 @file_version_middleware
 def file_version_delete(res_id, version_id):
     """
@@ -230,7 +233,7 @@ def file_version_delete(res_id, version_id):
 
 @app.route('/res/<int:res_id>/<int:version_id>/download', methods=['GET'])
 @login_required
-@resource_middleware
+@resource_middleware()
 @file_version_middleware
 def file_version_download(res_id, version_id):
     """

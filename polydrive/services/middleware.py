@@ -3,8 +3,9 @@ from flask import request
 from flask_login import current_user
 
 from polydrive.models import Resource, Version, resource_type, User
+from polydrive.services import resource_action
 from polydrive.services.messages import not_found, unauthorized, bad_request
-from polydrive.services.files import check_resource_rights
+from polydrive.services.resources import check_resource_rights
 
 
 def extract_parameter(param_name):
@@ -26,24 +27,28 @@ def extract_parameter(param_name):
     return param
 
 
-def resource_middleware(f):
+def resource_middleware(**options):
     """
     Check if the user can access the requested resource.
     """
+    action = options.get('action', resource_action.read)
 
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        res_id = extract_parameter('res_id')
-        if res_id is None:
-            return bad_request('No resource id provided.')
-        res_id = Resource.query.get(res_id)
-        if res_id is None:
-            return not_found('This resource does not exist.')
-        if not check_resource_rights(res_id, current_user):
-            return unauthorized('You cannot access this resource.')
-        return f(*args, **kwargs)
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            res_id = extract_parameter('res_id')
+            if res_id is None:
+                return bad_request('No resource id provided.')
+            res_id = Resource.query.get(res_id)
+            if res_id is None:
+                return not_found('This resource does not exist.')
+            if not check_resource_rights(res_id, current_user, action):
+                return unauthorized('You cannot access this resource.')
+            return f(*args, **kwargs)
 
-    return wrapper
+        return wrapper
+
+    return decorator
 
 
 def file_middleware(f):
@@ -85,10 +90,12 @@ def file_version_middleware(f):
     return wrapper
 
 
-def parent_middleware(required):
+def parent_middleware(**options):
     """
     Check if the parent is a folder and if the user can access it.
     """
+    required = options.get('required', False)
+    action = options.get('action', resource_action.read)
 
     def decorator(f):
         @wraps(f)
@@ -104,7 +111,7 @@ def parent_middleware(required):
                 return not_found('Parent folder does not exist.')
             if folder.type != resource_type.folder:
                 return bad_request('Parent is not a folder.')
-            if not check_resource_rights(folder, current_user):
+            if not check_resource_rights(folder, current_user, action):
                 return unauthorized('You cannot access parent folder.')
             return f(*args, **kwargs)
 

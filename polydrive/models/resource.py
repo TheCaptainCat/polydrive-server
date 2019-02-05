@@ -92,6 +92,15 @@ class Resource(db.Model):
                 Resource.delete(child)
         db.session.delete(res)
 
+    @staticmethod
+    def get_rights(res, user):
+        for role in res.roles:
+            if role.user_id == user.id:
+                return role
+        if res.parent is not None:
+            return Resource.get_rights(res.parent, user)
+        return None
+
 
 class ResourceType:
     @property

@@ -22,7 +22,7 @@ def shared_get():
 @app.route('/res/share/<int:res_id>/<int:user_id>', methods=['POST'])
 @app.route('/res/share/<int:res_id>/<int:user_id>/<r_type>', methods=['POST'])
 @login_required
-@resource_middleware
+@resource_middleware()
 @user_middleware
 def share_resource(res_id, user_id, r_type=role_type.view):
     """
