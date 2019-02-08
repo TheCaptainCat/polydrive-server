@@ -90,6 +90,8 @@ class Resource(db.Model):
         if res.type == resource_type.folder:
             for child in res.children:
                 Resource.delete(child)
+        for role in res.roles:
+            role.delete()
         db.session.delete(res)
 
     @staticmethod

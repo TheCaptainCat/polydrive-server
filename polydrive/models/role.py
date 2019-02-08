@@ -24,9 +24,8 @@ class Role(db.Model):
         json['user'] = self.user.serialized
         return json
 
-    @staticmethod
-    def delete(role):
-        db.session.delete(role)
+    def delete(self):
+        db.session.delete(self)
 
     @staticmethod
     def link(res, user, r_type):
@@ -49,14 +48,14 @@ class Role(db.Model):
     def unlink(res, user):
         role = Role.query.filter_by(res_id=res.id, user_id=user.id).first()
         if role is not None:
-            Role.delete(role)
+            role.delete()
         return role
 
     @staticmethod
     def unlink_deep(res, user, r_type):
         role = Role.query.filter_by(res_id=res.id, user_id=user.id).first()
         if role is not None and (r_type == role_type.edit or r_type == role_type.view == role.type):
-            Role.delete(role)
+            role.delete()
         for r in res.children:
             Role.unlink_deep(r, user, r_type)
 
