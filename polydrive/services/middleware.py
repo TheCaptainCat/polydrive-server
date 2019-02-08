@@ -41,7 +41,7 @@ def resource_middleware(**options):
             res_id = extract_parameter(key)
             if res_id is None:
                 if not required:
-                    f(*args, **kwargs)
+                    return f(*args, **kwargs)
                 else:
                     return bad_request('No resource id provided.')
             res = Resource.query.get(res_id)

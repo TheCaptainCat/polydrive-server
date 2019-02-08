@@ -151,6 +151,7 @@ def file_upload(parent_id=None):
     if replace_id is not None:
         file = Resource.query.get(replace_id)
         Resource.add_version(file, buffer)
+        db.session.commit()
         return created('File version uploaded.', file.deep)
     owner = current_user
     parent = None
