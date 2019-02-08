@@ -1,4 +1,3 @@
-from flask import request
 from flask_login import login_required, current_user
 
 from polydrive import app
@@ -43,3 +42,15 @@ def share_resource(res_id, user_id, r_type=role_type.view):
         return conflict('Resource already shared with user.')
     db.session.commit()
     return created('Resource shared.', role.deep)
+
+
+@app.route('/res/share/<int:res_id>/<int:user_id>', methods=['DELETE'])
+@login_required
+@resource_middleware(action=resource_action.delete)
+@user_middleware
+def revoke_resource(res_id, user_id):
+    res = Resource.query.get(res_id)
+    user = User.query.get(user_id)
+    Role.unlink(res, user)
+    db.session.commit()
+    return ok('Rights revoked on resource')

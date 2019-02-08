@@ -120,6 +120,8 @@ def resource_update(res_id):
         parent_id = content['parent_id']
         parent = Resource.query.get(parent_id) if parent_id is not None else None
         params['parent'] = parent
+        if parent.owner.id != resource.owner.id:
+            return bad_request('Resource cannot be moved here')
     Resource.update(resource, **params)
     db.session.commit()
     return ok('Resource updated', resource.deep)
@@ -194,7 +196,7 @@ def file_upload_version(res_id):
         return bad_request('No selected file.')
     Resource.add_version(file, buffer)
     db.session.commit()
-    return ok('File version uploaded.', file.deep)
+    return created('File version uploaded.', file.deep)
 
 
 @app.route('/res/<int:res_id>/<int:version_id>', methods=['GET'])

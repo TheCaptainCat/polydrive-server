@@ -50,6 +50,7 @@ class Role(db.Model):
         role = Role.query.filter_by(res_id=res.id, user_id=user.id).first()
         if role is not None:
             Role.delete(role)
+        return role
 
     @staticmethod
     def unlink_deep(res, user, r_type):

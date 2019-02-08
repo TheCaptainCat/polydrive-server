@@ -79,3 +79,9 @@ def user_register():
 @login_required
 def user_get_details():
     return ok('', current_user.serialized)
+
+
+@app.route('/users')
+@login_required
+def user_list():
+    return ok('OK', [u.serialized for u in User.query.all()])
