@@ -130,6 +130,7 @@ def resource_update(res_id):
 @app.route('/res/upload', methods=['POST'])
 @app.route('/res/upload/<int:parent_id>', methods=['POST'])
 @login_required
+@resource_middleware(required=False, key='replace_id')
 @parent_middleware(action=resource_action.write)
 def file_upload(parent_id=None):
     """
@@ -146,6 +147,11 @@ def file_upload(parent_id=None):
     buffer = request.files['file']
     if buffer.filename == '':
         return bad_request('No selected file.')
+    replace_id = request.form.get('replace_id', None)
+    if replace_id is not None:
+        file = Resource.query.get(replace_id)
+        Resource.add_version(file, buffer)
+        return created('File version uploaded.', file.deep)
     owner = current_user
     parent = None
     if parent_id is not None:

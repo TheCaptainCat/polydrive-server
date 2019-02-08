@@ -32,17 +32,22 @@ def resource_middleware(**options):
     Check if the user can access the requested resource.
     """
     action = options.get('action', resource_action.read)
+    required = options.get('required', True)
+    key = options.get('key', 'res_id')
 
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            res_id = extract_parameter('res_id')
+            res_id = extract_parameter(key)
             if res_id is None:
-                return bad_request('No resource id provided.')
-            res_id = Resource.query.get(res_id)
-            if res_id is None:
+                if not required:
+                    f(*args, **kwargs)
+                else:
+                    return bad_request('No resource id provided.')
+            res = Resource.query.get(res_id)
+            if res is None:
                 return not_found('This resource does not exist.')
-            if not check_resource_rights(res_id, current_user, action):
+            if not check_resource_rights(res, current_user, action):
                 return unauthorized('You cannot access this resource.')
             return f(*args, **kwargs)
 
