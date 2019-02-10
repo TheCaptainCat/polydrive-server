@@ -6,5 +6,5 @@ WORKDIR server
 RUN pip install -U pip && pip install -r requirements.txt
 
 EXPOSE 5000
-RUN python polydrive.py init_database
+RUN python polydrive.py init_fake_database
 CMD gunicorn -b 0.0.0.0:5000 polydrive:app
